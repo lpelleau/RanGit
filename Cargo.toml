@@ -4,3 +4,5 @@ version = "0.0.1"
 authors = ["Loïc Pelleau <loicpelleau@yahoo.fr>"]
 
 [dependencies]
+hyper = "^0.8.1"
+url = "^0.5.9"
