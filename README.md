@@ -18,9 +18,9 @@ Run the project with `cargo run`.
 
 ## Todo
 There are still a lot of things to do:
-* get root user (for search) with option;
 * add parameters:
   * MIN and MAX depth in following;
   * langage selection (severals);
   * MIN and MAX stars on repository;
+* Introduce cache for the results (with TTL ?): database (SQL/NoQL) ? file ?
 * Restructuration of the code (with library for JSON requests ?)
