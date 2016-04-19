@@ -1,0 +1,6 @@
+[package]
+name = "ran_git"
+version = "0.0.1"
+authors = ["Loïc Pelleau <loicpelleau@yahoo.fr>"]
+
+[dependencies]
