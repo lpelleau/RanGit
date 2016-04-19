@@ -1,6 +1,7 @@
 extern crate hyper;
 extern crate url;
 extern crate serde_json;
+extern crate rand;
 
 use url::Url;
 use hyper::client::Request;
@@ -129,8 +130,10 @@ fn main() {
 
     if let Some(token) = config.get("token") {
         if let Some(login) = config.get("root-login") {
-            if let Some(all_repo) = search(token, login, &1) {
-                for repo in all_repo.iter() {
+            if let Some(all_repo) = search(token, login, &3) {
+                let selected = rand::random::<usize>() % all_repo.len();
+
+                if let Some(repo) = all_repo.get(selected) {
                     println!("{}", repo);
                 }
             }

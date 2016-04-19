@@ -7,3 +7,4 @@ authors = ["Loïc Pelleau <loicpelleau@yahoo.fr>"]
 hyper = "^0.8.1"
 url = "^0.5.9"
 serde_json = "^0.7.0"
+rand = "^0.3.14"
