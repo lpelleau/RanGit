@@ -21,7 +21,7 @@ fn read_config(file: &String) -> Box<HashMap<String, String>> {
     let mut reader = io::BufReader::new(f);
     let mut buffer = String::new();
 
-    let mut res = HashMap::new();
+    let mut res: HashMap<String, String> = HashMap::new();
 
     loop {
         match reader.read_line(&mut buffer) {
@@ -51,7 +51,7 @@ fn get_json(url: &String) -> serde_json::Value {
         Err(err) => panic!("Failed to create Request: {}", err)
     };
 
-    let user_agent = "User-Agent: lpelleau@insa-rennes.fr";
+    let user_agent = "User-Agent: lpelleau/Rangit";
     req.headers_mut().set(header::ContentLength(0u64));
     req.headers_mut().set(header::UserAgent(user_agent.to_string()));
 
@@ -75,29 +75,61 @@ fn get_json(url: &String) -> serde_json::Value {
         .unwrap_or_else(|e| panic!("Failed when getting JSON: {:?} (code: {})", e, resp.status))
 }
 
-//fn search<'a>(login: &String, depth: &i8) -> Option<Box<&'a mut Vec<String>>> {
-fn search(api_token: &String, login: &String, depth: &i8) -> Option<Box<Vec<String>>> {
+fn search(api_token: &String, login: &String, options: &SearchOption, curr_depth: u8) -> Option<Box<Vec<String>>> {
+    if options.max_depth() == curr_depth {
+        return Some(Box::new(Vec::new()));
+    }
+
     let mut res = Vec::new();
 
     let api_str = "https://api.github.com/users/".to_string();
     let starred_str = &format!("{}{}{}?access_token={}", api_str, login, "/starred".to_string(), api_token);
     let following_str = &format!("{}{}{}?access_token={}", api_str, login, "/following".to_string(), api_token);
 
-    let star = get_json(starred_str);
-    let starred_vec = match star.as_array() {
-        Some(x) => x,
-        None => panic!("Failure on JSON parsing")
-    };
+    if options.min_depth() >= curr_depth {
+        let star = get_json(starred_str);
+        let starred_vec = match star.as_array() {
+            Some(x) => x,
+            None => panic!("Failure on JSON parsing")
+        };
 
-    for repository in starred_vec {
-        let starred = repository.as_object()
-            .and_then(|object| object.get("html_url"))
-            .and_then(|value| value.as_string())
-            .unwrap_or_else(|| panic!("Failed to get starred"));
-        res.push(starred.to_string());
+        for repository in starred_vec {
+            let rep = repository.as_object();
+
+            let stargazers_count = rep.and_then(|object| object.get("stargazers_count"))
+                .and_then(|value| value.as_i64())
+                .unwrap_or_else(|| panic!("Failed to get repository star's count")) as u32;
+
+            let language = rep.and_then(|object| object.get("language"))
+                .and_then(|value| value.as_string())
+                .unwrap_or_else(|| panic!("Failed to get language"));
+
+            if let Some(languages) = options.languages() {
+                println!("{}", language.to_uppercase());
+                if !languages.contains(&language.to_string().to_uppercase()) {
+                    continue;
+                }
+            }
+
+            let starred = rep.and_then(|object| object.get("html_url"))
+                .and_then(|value| value.as_string())
+                .unwrap_or_else(|| panic!("Failed to get starred"));
+
+            if options.max_star().is_some() {
+                let max = options.max_star().unwrap();
+
+                if stargazers_count > options.min_star() && stargazers_count < max {
+                    res.push(starred.to_string());
+                }
+            } else {
+                if stargazers_count > options.min_star() {
+                    res.push(starred.to_string());
+                }
+            }
+        }
     }
 
-    if *depth == 1 {
+    if options.max_depth() == curr_depth + 1 {
         return Some(Box::new(res));
     }
 
@@ -113,7 +145,7 @@ fn search(api_token: &String, login: &String, depth: &i8) -> Option<Box<Vec<Stri
             .and_then(|value| value.as_string())
             .unwrap_or_else(|| panic!("Failed to get following"));
 
-        let sub_res = search(&api_token, &login.to_string(), &(depth - 1));
+        let sub_res = search(&api_token, &login.to_string(), options, curr_depth + 1);
 
         if let Some(x) = sub_res {
             unsafe {
@@ -125,16 +157,80 @@ fn search(api_token: &String, login: &String, depth: &i8) -> Option<Box<Vec<Stri
     Some(Box::new(res))
 }
 
+struct SearchOption<'a> {
+    min_depth: Option<&'a String>,
+    max_depth: Option<&'a String>,
+    min_star: Option<&'a String>,
+    max_star: Option<&'a String>,
+    languages: Option<&'a String>
+}
+
+impl<'a> SearchOption<'a> {
+    fn min_depth(&self) -> u8 {
+        match self.min_depth {
+            Some(e) => e.parse::<u8>().unwrap(),
+            None => 0
+        }
+    }
+
+    fn max_depth(&self) -> u8 {
+        match self.max_depth {
+            Some(e) => e.parse::<u8>().unwrap(),
+            None => 7
+        }
+    }
+
+    fn min_star(&self) -> u32 {
+        match self.min_star {
+            Some(e) => e.parse::<u32>().unwrap(),
+            None => 0
+        }
+    }
+
+    fn max_star(&self) -> Option<u32> {
+        match self.max_star {
+            Some(e) => Some(e.parse::<u32>().unwrap()),
+            None => None
+        }
+    }
+
+    fn languages(&self) -> Option<Vec<String>> {
+        let mut lang: Vec<String> = Vec::new();
+        match self.languages {
+            Some(languages) => {
+                let line: Vec<&str> = languages.split(",").collect();
+                for l in line {
+                    lang.push(l.trim().to_string().to_uppercase())
+                }
+                Some(lang)
+            },
+            None => None
+        }
+    }
+}
+
 fn main() {
     let config = read_config(&"config.ini".to_string());
 
     if let Some(token) = config.get("token") {
         if let Some(login) = config.get("root-login") {
-            if let Some(all_repo) = search(token, login, &3) {
-                let selected = rand::random::<usize>() % all_repo.len();
+            let options = SearchOption {
+                min_depth: config.get("depth-min"),
+                max_depth: config.get("depth-max"),
+                min_star: config.get("star-min"),
+                max_star: config.get("star-max"),
+                languages: config.get("languages"),
+            };
 
-                if let Some(repo) = all_repo.get(selected) {
-                    println!("{}", repo);
+            if let Some(all_repo) = search(token, login, &options, 0) {
+                if all_repo.len() > 0 {
+                    let selected = rand::random::<usize>() % all_repo.len();
+
+                    if let Some(repo) = all_repo.get(selected) {
+                        println!("{}", repo);
+                    }
+                } else {
+                    println!("No repository found with your criteria.")
                 }
             }
         }

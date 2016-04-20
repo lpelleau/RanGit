@@ -1,2 +1,7 @@
 token = YOUR-TOKEN-HERE
 root-login = YOUR-LOGIN-HERE
+depth-min = 2
+depth-max = 2
+languages = Rust
+star-min = 10
+star-max = 100
