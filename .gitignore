@@ -2,4 +2,5 @@
 Cargo.lock
 *.iml
 target/
+out/
 config.ini
