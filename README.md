@@ -4,9 +4,9 @@ RanGit enable you to search repositories from a specific user by looking at his 
 
 ## Motivation
 Finding a hidden project on Github which could be THE new project you shouldn't miss.  
-This is my first project in Rust langage. 
+This is my first project in Rust language.
 A simple project to understand the basics.   
-*Don't look at the code.*
+*Don't look at the code... Ugly.*
 
 ## Installation
 Install Rust environment [on the official site](https://www.rust-lang.org/downloads.html).  
@@ -15,12 +15,20 @@ Get a token with Github API OAuth 2.0 and place it in the config file.
 
 ## Usage
 Run the project with `cargo run`.
+You can change settings in *config.ini* file.
+All options except *token* and *root-login* are optional.
+
+Available options are:
+* **depth-min**: integer >= 0
+* **depth-max**: integer > 0
+* **star-min**: integer >= 0
+* **star-max**: integer > 0
+* **languages**: <Lang1, Lang2, ...>* (not case-sensitive)
 
 ## Todo
 There are still a lot of things to do:
-* add parameters:
-  * MIN and MAX depth in following;
-  * langage selection (severals);
-  * MIN and MAX stars on repository;
-* Introduce cache for the results (with TTL ?): database (SQL/NoQL) ? file ?
-* Restructuration of the code (with library for JSON requests ?)
+* introduce cache for the results (with TTL ?): database (SQL/NoQL) ? file ?
+* reorganization of the code (with library for JSON requests ?)
+* add concurrency;
+* control inputs in config file;
+* integrate *[rust-ini](https://github.com/zonyitoo/rust-ini)* lib ?
