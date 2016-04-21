@@ -25,6 +25,8 @@ Available options are:
 * **star-max**: integer > 0
 * **languages**: <Lang1, Lang2, ...>* (not case-sensitive)
 
+*/!\ Some language's repositories cannot be detected with Github API.*
+
 ## Todo
 There are still a lot of things to do:
 * introduce cache for the results (with TTL ?): database (SQL/NoQL) ? file ?
@@ -32,3 +34,6 @@ There are still a lot of things to do:
 * add concurrency;
 * control inputs in config file;
 * integrate *[rust-ini](https://github.com/zonyitoo/rust-ini)* lib ?
+* avoid getting same result several times;
+* avoid getting root-login repositories in results;
+* add *--verbose* argument to program showing advancement of the requests;
