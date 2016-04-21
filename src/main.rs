@@ -102,10 +102,9 @@ fn search(api_token: &String, login: &String, options: &SearchOption, curr_depth
 
             let language = rep.and_then(|object| object.get("language"))
                 .and_then(|value| value.as_string())
-                .unwrap_or_else(|| panic!("Failed to get language"));
+                .unwrap_or_else(|| "No language (in API)");
 
             if let Some(languages) = options.languages() {
-                println!("{}", language.to_uppercase());
                 if !languages.contains(&language.to_string().to_uppercase()) {
                     continue;
                 }
