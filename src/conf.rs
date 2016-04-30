@@ -27,7 +27,10 @@ impl<'a> Config<'a> {
         loop {
             let result = reader.read_line(&mut buffer);
 
-            if result.is_ok() && result.ok().unwrap() > 0 {
+            if result.is_ok() {
+                if result.ok().unwrap() <= 0 {
+                    break;
+                }
                 let mut line = buffer.split("=");
 
                 let key = line.next().unwrap().trim().to_string();
