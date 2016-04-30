@@ -30,7 +30,6 @@ Available options are:
 ## Todo
 There are still a lot of things to do:
 * introduce cache for the results (with TTL ?): database (SQL/NoQL) ? file ?
-* reorganization of the code (with library for JSON requests ?)
 * add concurrency;
 * integrate *[rust-ini](https://github.com/zonyitoo/rust-ini)* lib ?
 * avoid getting same result several times;
