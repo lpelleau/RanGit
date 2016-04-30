@@ -21,6 +21,7 @@ impl<'a> Config<'a> {
                 return;
             }
         };
+        self.params.clear();
         let mut reader = io::BufReader::new(f);
         let mut buffer = String::new();
 
