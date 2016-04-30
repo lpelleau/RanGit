@@ -1,84 +1,108 @@
-use conf;
-use request;
+use conf::*;
+use request::*;
 
-pub fn search(options: &conf::Config, api: &request::APIRest, login: &String, curr_depth: u8) -> Option<Box<Vec<String>>> {
-    if options.max_depth() == curr_depth {
-        return Some(Box::new(Vec::new()));
+pub struct Search {
+    options: Config,
+    api: APIRest
+}
+
+impl Search {
+    pub fn new(options: Config, api: APIRest) -> Search {
+        Search{ options: options, api: api }
     }
 
-    let mut res = Vec::new();
+    pub fn compute(&self, login: &String) -> Vec<String> {
+        self.comp(login, 0)
+    }
 
-    let api_starred = &format!("{}{}?access_token={}", login, "/starred".to_string(), options.token());
-    let api_following = &format!("{}{}?access_token={}", login, "/following".to_string(), options.token());
+    fn comp(&self, login: &String, curr_depth: u8) -> Vec<String> {
+        let mut res = Vec::new();
 
-    if options.min_depth() >= curr_depth {
-        if let Ok(star) = api.get(api_starred) {
-            let starred_vec = match star.as_array() {
-                Some(x) => x,
-                None => panic!("Failure on JSON parsing")
-            };
+        if self.options.max_depth() == curr_depth {
+            return res;
+        }
 
-            for repository in starred_vec {
-                let rep = repository.as_object();
+        if self.options.min_depth() >= curr_depth {
+            res.append(&mut self.starred(login));
+        }
 
-                let stargazers_count = rep.and_then(|object| object.get("stargazers_count"))
-                    .and_then(|value| value.as_i64())
-                    .unwrap_or_else(|| panic!("Failed to get repository star's count")) as u32;
+        if self.options.max_depth() == curr_depth + 1 {
+            return res;
+        }
 
-                let language = rep.and_then(|object| object.get("language"))
-                    .and_then(|value| value.as_string())
-                    .unwrap_or_else(|| "No language (in API)");
+        res.append(&mut self.following(login, curr_depth));
 
-                if let Some(languages) = options.languages() {
-                    if !languages.contains(&language.to_string().to_uppercase()) {
-                        continue;
-                    }
-                }
+        res
+    }
 
-                let starred = rep.and_then(|object| object.get("html_url"))
-                    .and_then(|value| value.as_string())
-                    .unwrap_or_else(|| panic!("Failed to get starred"));
+    fn starred(&self, login: &String) -> Vec<String> {
+        let mut res = Vec::new();
 
-                if options.max_star().is_some() {
-                    let max = options.max_star().unwrap();
+        let api_starred = &format!("{}{}?access_token={}", login, "/starred".to_string(), self.options.token());
 
-                    if stargazers_count > options.min_star() && stargazers_count < max {
-                        res.push(starred.to_string());
-                    }
-                } else {
-                    if stargazers_count > options.min_star() {
-                        res.push(starred.to_string());
+        if let Ok(star) = self.api.get(api_starred) {
+            if let Some(starred_vec) = star.as_array() {
+                for repository in starred_vec {
+                    let rep = repository.as_object();
+
+                    let stargazers_count = rep.and_then(|object| object.get("stargazers_count"))
+                        .and_then(|value| value.as_i64());
+
+                    let language = rep.and_then(|object| object.get("language"))
+                        .and_then(|value| value.as_string());
+
+                    let starred = rep.and_then(|object| object.get("html_url"))
+                        .and_then(|value| value.as_string());
+
+                    match (stargazers_count, starred) {
+                        (Some(count), Some(starred)) => {
+                            let lang = language.unwrap_or("").to_string().to_uppercase();
+                            if self.options.languages().is_some() && !self.options.languages().unwrap().contains(&lang) {
+                                continue;
+                            }
+
+                            let count = count as u32;
+
+                            match self.options.max_star() {
+                                Some(max_star) => {
+                                    if count > self.options.min_star() && count < max_star {
+                                        res.push(starred.to_string());
+                                    }
+                                },
+                                _ => {
+                                    if count > self.options.min_star() {
+                                        res.push(starred.to_string());
+                                    }
+                                }
+                            }
+                        },
+                        _ => ()
                     }
                 }
             }
         }
+
+        res
     }
 
-    if options.max_depth() == curr_depth + 1 {
-        return Some(Box::new(res));
-    }
+    fn following(&self, login: &String, curr_depth: u8) -> Vec<String> {
+        let mut res = Vec::new();
 
-    if let Ok(foll) = api.get(api_following) {
-        let following_vec = match foll.as_array() {
-            Some(x) => x,
-            None => panic!("Failure on JSON parsing")
-        };
+        let api_following = &format!("{}{}?access_token={}", login, "/following".to_string(), self.options.token());
 
-        for user in following_vec {
-            let login = user.as_object()
-                .and_then(|object| object.get("login"))
-                .and_then(|value| value.as_string())
-                .unwrap_or_else(|| panic!("Failed to get following"));
+        if let Ok(foll) = self.api.get(api_following) {
+            if let Some(following_vec) = foll.as_array() {
+                for user in following_vec {
+                    if let Some(login) = user.as_object()
+                            .and_then(|object| object.get("login"))
+                            .and_then(|value| value.as_string()) {
 
-            let sub_res = search(options, api, &login.to_string(), curr_depth + 1);
-
-            if let Some(x) = sub_res {
-                unsafe {
-                    res.append(&mut (*Box::into_raw(x)));
+                        res.append(&mut self.comp(&login.to_string(), curr_depth + 1));
+                    }
                 }
             }
         }
-    }
 
-    Some(Box::new(res))
+        res
+    }
 }

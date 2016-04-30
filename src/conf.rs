@@ -3,18 +3,18 @@ use std::fs;
 use std::io;
 use std::io::prelude::*;
 
-pub struct Config<'a> {
-    file: &'a str,
+pub struct Config {
+    file: String,
     params: HashMap<String, String>
 }
 
-impl<'a> Config<'a> {
-    pub fn new(file: &str) -> Config {
+impl Config {
+    pub fn new(file: String) -> Config {
         Config { file: file, params: HashMap::new() }
     }
 
     pub fn load(&mut self) -> Result<&Config, String> {
-        let f = match fs::File::open(self.file) {
+        let f = match fs::File::open(&self.file) {
             Ok(e) => e,
             Err(e) => {
                 return Err(format!("Failed to load {}, {}", self.file, e));
