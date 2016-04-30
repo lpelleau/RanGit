@@ -1,7 +1,7 @@
 use conf;
 use request;
 
-pub fn search(api_token: &String, login: &String, options: &conf::SearchOption, curr_depth: u8) -> Option<Box<Vec<String>>> {
+pub fn search(api_token: &String, login: &String, options: &conf::Config, curr_depth: u8) -> Option<Box<Vec<String>>> {
     if options.max_depth() == curr_depth {
         return Some(Box::new(Vec::new()));
     }
@@ -23,12 +23,12 @@ pub fn search(api_token: &String, login: &String, options: &conf::SearchOption, 
             let rep = repository.as_object();
 
             let stargazers_count = rep.and_then(|object| object.get("stargazers_count"))
-            .and_then(|value| value.as_i64())
-            .unwrap_or_else(|| panic!("Failed to get repository star's count")) as u32;
+                .and_then(|value| value.as_i64())
+                .unwrap_or_else(|| panic!("Failed to get repository star's count")) as u32;
 
             let language = rep.and_then(|object| object.get("language"))
-            .and_then(|value| value.as_string())
-            .unwrap_or_else(|| "No language (in API)");
+                .and_then(|value| value.as_string())
+                .unwrap_or_else(|| "No language (in API)");
 
             if let Some(languages) = options.languages() {
                 if !languages.contains(&language.to_string().to_uppercase()) {
@@ -37,8 +37,8 @@ pub fn search(api_token: &String, login: &String, options: &conf::SearchOption, 
             }
 
             let starred = rep.and_then(|object| object.get("html_url"))
-            .and_then(|value| value.as_string())
-            .unwrap_or_else(|| panic!("Failed to get starred"));
+                .and_then(|value| value.as_string())
+                .unwrap_or_else(|| panic!("Failed to get starred"));
 
             if options.max_star().is_some() {
                 let max = options.max_star().unwrap();
@@ -66,9 +66,9 @@ pub fn search(api_token: &String, login: &String, options: &conf::SearchOption, 
 
     for user in following_vec {
         let login = user.as_object()
-        .and_then(|object| object.get("login"))
-        .and_then(|value| value.as_string())
-        .unwrap_or_else(|| panic!("Failed to get following"));
+            .and_then(|object| object.get("login"))
+            .and_then(|value| value.as_string())
+            .unwrap_or_else(|| panic!("Failed to get following"));
 
         let sub_res = search(&api_token, &login.to_string(), options, curr_depth + 1);
 

@@ -40,5 +40,5 @@ pub fn get_json(url: &String) -> serde_json::Value {
     };
 
     serde_json::from_str(resp_body.as_str())
-    .unwrap_or_else(|e| panic!("Failed when getting JSON: {:?} (code: {})", e, resp.status))
+        .unwrap_or_else(|e| panic!("Failed when getting JSON: {:?} (code: {})", e, resp.status))
 }
