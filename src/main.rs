@@ -16,7 +16,7 @@ fn main() {
             let selected = rand::random::<usize>() % all_repo.len();
 
             if let Some(repo) = all_repo.get(selected) {
-                println!("{}", repo);
+                println!("Found: {}", repo);
             }
         } else {
             println!("No repository found with your criteria.")

@@ -19,7 +19,7 @@ pub fn get_json(url: &String) -> serde_json::Value {
         Err(err) => panic!("Failed to create Request: {}", err)
     };
 
-    let user_agent = "User-Agent: lpelleau/Rangit";
+    let user_agent = "User-Agent: lpelleau/RanGit";
     req.headers_mut().set(header::ContentLength(0u64));
     req.headers_mut().set(header::UserAgent(user_agent.to_string()));
 
