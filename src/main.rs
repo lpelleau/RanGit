@@ -9,7 +9,12 @@ mod work;
 
 fn main() {
     let mut config = conf::Config::new("config.ini");
-    config.load();
+    {
+        let load_res = config.load();
+        if load_res.is_err() {
+            panic!("{}", load_res.err().unwrap());
+        }
+    }
 
     if let Some(all_repo) = work::search(&config, &config.login(), 0) {
         if all_repo.len() > 0 {

@@ -13,12 +13,11 @@ impl<'a> Config<'a> {
         Config { file: file, params: HashMap::new() }
     }
 
-    pub fn load(&mut self) -> () {
+    pub fn load(&mut self) -> Result<&Config, String> {
         let f = match fs::File::open(self.file) {
             Ok(e) => e,
             Err(e) => {
-                println!("Failed to load {}, {}", self.file, e);
-                return;
+                return Err(format!("Failed to load {}, {}", self.file, e));
             }
         };
         self.params.clear();
@@ -42,6 +41,8 @@ impl<'a> Config<'a> {
 
             buffer.clear();
         }
+
+        Ok(self)
     }
 
     pub fn login(&self) -> String {
