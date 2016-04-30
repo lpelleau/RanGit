@@ -16,7 +16,10 @@ fn main() {
         }
     }
 
-    if let Some(all_repo) = work::search(&config, &config.login(), 0) {
+    let mut api = request::APIRest::new("https://api.github.com/users/".to_string());
+    api.set_user_agent("User-Agent: lpelleau/RanGit".to_string());
+
+    if let Some(all_repo) = work::search(&config, &api, &config.login(), 0) {
         if all_repo.len() > 0 {
             let selected = rand::random::<usize>() % all_repo.len();
 
