@@ -1,7 +1,7 @@
 use conf;
 use request;
 
-pub fn search(api_token: &String, login: &String, options: &conf::Config, curr_depth: u8) -> Option<Box<Vec<String>>> {
+pub fn search(options: &conf::Config, login: &String, curr_depth: u8) -> Option<Box<Vec<String>>> {
     if options.max_depth() == curr_depth {
         return Some(Box::new(Vec::new()));
     }
@@ -9,8 +9,8 @@ pub fn search(api_token: &String, login: &String, options: &conf::Config, curr_d
     let mut res = Vec::new();
 
     let api_str = "https://api.github.com/users/".to_string();
-    let starred_str = &format!("{}{}{}?access_token={}", api_str, login, "/starred".to_string(), api_token);
-    let following_str = &format!("{}{}{}?access_token={}", api_str, login, "/following".to_string(), api_token);
+    let starred_str = &format!("{}{}{}?access_token={}", api_str, login, "/starred".to_string(), options.token());
+    let following_str = &format!("{}{}{}?access_token={}", api_str, login, "/following".to_string(), options.token());
 
     if options.min_depth() >= curr_depth {
         let star = request::get_json(starred_str);
@@ -70,7 +70,7 @@ pub fn search(api_token: &String, login: &String, options: &conf::Config, curr_d
             .and_then(|value| value.as_string())
             .unwrap_or_else(|| panic!("Failed to get following"));
 
-        let sub_res = search(&api_token, &login.to_string(), options, curr_depth + 1);
+        let sub_res = search(options, &login.to_string(), curr_depth + 1);
 
         if let Some(x) = sub_res {
             unsafe {
