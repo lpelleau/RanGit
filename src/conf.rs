@@ -93,7 +93,11 @@ impl<'a> Config<'a> {
                 for l in line {
                     lang.push(l.trim().to_string().to_uppercase())
                 }
-                Some(lang)
+                if lang.len() > 0 {
+                    Some(lang)
+                } else {
+                    None
+                }
             },
             None => None
         }
