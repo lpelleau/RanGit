@@ -61,28 +61,40 @@ impl<'a> Config<'a> {
 
     pub fn min_depth(&self) -> u8 {
         match self.params.get("depth-min") {
-            Some(e) => e.to_string().parse::<u8>().unwrap(),
+            Some(e) => match e.to_string().parse::<u8>() {
+                Ok(v) => v,
+                Err(_) => 0
+            },
             None => 0
         }
     }
 
     pub fn max_depth(&self) -> u8 {
         match self.params.get("depth-max") {
-            Some(e) => e.to_string().parse::<u8>().unwrap(),
+            Some(e) => match e.to_string().parse::<u8>() {
+                Ok(v) => v,
+                Err(_) => 7
+            },
             None => 7
         }
     }
 
     pub fn min_star(&self) -> u32 {
         match self.params.get("star-min") {
-            Some(e) => e.to_string().parse::<u32>().unwrap(),
+            Some(e) => match e.to_string().parse::<u32>() {
+                Ok(v) => v,
+                Err(_) => 0
+            },
             None => 0
         }
     }
 
     pub fn max_star(&self) -> Option<u32> {
         match self.params.get("star-max") {
-            Some(e) => Some(e.to_string().parse::<u32>().unwrap()),
+            Some(e) => match e.to_string().parse::<u32>() {
+                Ok(v) => Some(v),
+                Err(_) => None
+            },
             None => None
         }
     }
