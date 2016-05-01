@@ -33,10 +33,14 @@ impl Config {
                 }
                 let mut line = buffer.split("=");
 
-                let key = line.next().unwrap().trim().to_string();
-                let value = line.next().unwrap().trim().to_string();
-
-                self.params.insert(key, value);
+                match (line.next(), line.next()) {
+                    (Some(key), Some(value)) => {
+                        let key: &str = key; // Needed to explicitly say the type...
+                        let value: &str = value;
+                        self.params.insert(key.trim().to_string(), value.trim().to_string());
+                    },
+                    _ => ()
+                }
             }
 
             buffer.clear();
