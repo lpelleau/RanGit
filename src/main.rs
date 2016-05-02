@@ -7,21 +7,27 @@ mod conf;
 mod request;
 mod work;
 
+use std::env;
+
 fn main() {
+    let mut verbose = false;
+    if let Some(arg1) = env::args().nth(1) {
+        if arg1 == "-v" || arg1 == "--verbose" {
+            verbose = true;
+        }
+    }
+
     let mut config = conf::Config::new("config.ini".to_string());
-    {
-        match config.load() {
-            Err(err) => panic!("{}", err),
-            _ => ()
-        };
+    if let Err(err) = config.load() {
+        panic!("{}", err);
     }
 
     let mut api = request::APIRest::new("https://api.github.com/users/".to_string());
     api.set_user_agent("User-Agent: lpelleau/RanGit".to_string());
 
     let login = &config.login().clone();
-    let search = work::Search::new(config, api);
-    let all_repo = search.compute(login);
+    let mut search = work::Search::new(config, api);
+    let all_repo = search.compute(login, verbose);
 
     if all_repo.len() > 0 {
         let selected = rand::random::<usize>() % all_repo.len();
