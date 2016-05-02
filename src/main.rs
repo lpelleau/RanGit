@@ -33,7 +33,11 @@ fn main() {
         let selected = rand::random::<usize>() % all_repo.len();
 
         if let Some(repo) = all_repo.get(selected) {
-            println!("Found: {}", repo);
+            println!("Found: ");
+            for i in 0..(repo.len() - 1) {
+                print!("{} -> ", repo[i]);
+            }
+            println!("\n\t= {}", repo[repo.len() - 1]);
         }
     } else {
         println!("No repository found with your criteria.")

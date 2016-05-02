@@ -26,6 +26,8 @@ Available options are:
 
 */!\ Some language's repositories cannot be detected with Github API.*
 
+To see the advancement of the process, add -v (or --verbose) argument.  
+
 ## Todo
 There are still a lot of things to do:
 * introduce cache for the results (with TTL ?): database (SQL/NoQL) ? file ?

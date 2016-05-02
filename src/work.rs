@@ -20,15 +20,19 @@ impl Search {
         }
     }
 
-    pub fn compute(&mut self, login: &String, verbose: bool) -> Vec<String> {
+    pub fn compute(&mut self, login: &String, verbose: bool) -> Vec<Vec<String>> {
         self.verbose = verbose;
         self.visited_users.clear();
         self.repositories.clear();
 
-        self.comp(login, 0)
+        self.comp(vec![login.clone()], 0)
     }
 
-    fn comp(&mut self, login: &String, curr_depth: u8) -> Vec<String> {
+    fn comp(&mut self, login: Vec<String>, curr_depth: u8) -> Vec<Vec<String>> {
+        let curr_login = match login.last() {
+            Some(l) => l,
+            None => panic!("Internal error") // Should never happen
+        };
         let mut res = Vec::new();
 
         if self.options.max_depth() == curr_depth {
@@ -36,10 +40,10 @@ impl Search {
         }
 
         if curr_depth >= self.options.min_depth() {
-            if !self.visited_users.contains(login) {
-                self.visited_users.push(login.clone());
+            if !self.visited_users.contains(curr_login) {
+                self.visited_users.push(curr_login.clone());
 
-                res.append(&mut self.starred(login));
+                res.append(&mut self.starred(login.clone()));
             }
         }
 
@@ -47,15 +51,19 @@ impl Search {
             return res;
         }
 
-        res.append(&mut self.following(login, curr_depth));
+        res.append(&mut self.following(login.clone(), curr_depth));
 
         res
     }
 
-    fn starred(&mut self, login: &String) -> Vec<String> {
+    fn starred(&mut self, login: Vec<String>) -> Vec<Vec<String>> {
+        let curr_login = match login.last() {
+            Some(l) => l,
+            None => panic!("Internal error") // Should never happen
+        };
         let mut res = Vec::new();
 
-        let api_starred = &format!("{}{}?access_token={}", login, "/starred".to_string(), self.options.token());
+        let api_starred = &format!("{}{}?access_token={}", curr_login, "/starred".to_string(), self.options.token());
 
         if let Ok(star) = self.api.get(api_starred) {
             if let Some(starred_vec) = star.as_array() {
@@ -93,12 +101,16 @@ impl Search {
                             match self.options.max_star() {
                                 Some(max_star) => {
                                     if count > self.options.min_star() && count < max_star {
-                                        res.push(starred.to_string());
+                                        let mut login = login.clone();
+                                        login.push(starred.to_string());
+                                        res.push(login);
                                     }
                                 },
                                 _ => {
                                     if count > self.options.min_star() {
-                                        res.push(starred.to_string());
+                                        let mut login = login.clone();
+                                        login.push(starred.to_string());
+                                        res.push(login);
                                     }
                                 }
                             }
@@ -110,25 +122,31 @@ impl Search {
         }
 
         if self.verbose {
-            println!("# Login '{}' computed ({} repo(s))", login, res.len());
+            println!("# Login '{}' computed ({} repo(s))", curr_login, res.len());
         }
 
         res
     }
 
-    fn following(&mut self, login: &String, curr_depth: u8) -> Vec<String> {
+    fn following(&mut self, login: Vec<String>, curr_depth: u8) -> Vec<Vec<String>> {
+        let curr_login = match login.last() {
+            Some(l) => l,
+            None => panic!("Internal error") // Should never happen
+        };
         let mut res = Vec::new();
 
-        let api_following = &format!("{}{}?access_token={}", login, "/following".to_string(), self.options.token());
+        let api_following = &format!("{}{}?access_token={}", curr_login, "/following".to_string(), self.options.token());
 
         if let Ok(foll) = self.api.get(api_following) {
             if let Some(following_vec) = foll.as_array() {
                 for user in following_vec {
-                    if let Some(login) = user.as_object()
+                    if let Some(new_login) = user.as_object()
                             .and_then(|object| object.get("login"))
                             .and_then(|value| value.as_string()) {
+                        let mut login = login.clone();
+                        login.push(new_login.to_string());
 
-                        res.append(&mut self.comp(&login.to_string(), curr_depth + 1));
+                        res.append(&mut self.comp(login, curr_depth + 1));
                     }
                 }
             }
