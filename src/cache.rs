@@ -4,8 +4,10 @@ use std::fs::File;
 use std::io::{Read, Write, Error, ErrorKind};
 use std::path::PathBuf;
 use std::hash::Hash;
+use std::collections::hash_map::Entry::*;
 use std::collections::*;
 use serde_json;
+use std::time::{SystemTime, Duration};
 
 #[derive(Serialize, Deserialize)]
 pub struct Cache<K, V>
@@ -20,6 +22,7 @@ pub struct Cache<K, V>
 #[derive(Serialize, Deserialize)]
 struct CachedItem<V> {
     value: V,
+    expires: SystemTime,
 }
 
 impl<K, V> Cache<K, V>
@@ -35,11 +38,25 @@ impl<K, V> Cache<K, V>
     pub fn get_or_compute<F>(&mut self, key: K, compute: F) -> &mut V
         where F: FnOnce() -> V
     {
-        let entry = self.store.entry(key).or_insert_with(|| CachedItem {
+        let build_value  = || CachedItem {
             value: compute(),
-        });
+            expires: SystemTime::now() + Duration::from_secs(3600)
+        };
 
-        &mut entry.value
+        let item = match self.store.entry(key) {
+            Occupied(entry) => {
+                let item = entry.into_mut();
+
+                if item.expires < SystemTime::now() {
+                    *item = build_value();
+                }
+
+                item
+            },
+            Vacant(entry) => entry.insert(build_value())
+        };
+
+        &mut item.value
     }
 
     pub fn save(&self)
