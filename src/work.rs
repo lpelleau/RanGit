@@ -71,7 +71,7 @@ impl Search {
                     let rep = repository.as_object();
 
                     let language = rep.and_then(|object| object.get("language"))
-                        .and_then(|value| value.as_string());
+                        .and_then(|value| value.as_str());
 
                     let lang = language.unwrap_or("").to_string().to_uppercase();
                     if self.options.languages().is_some() && !self.options.languages().unwrap().contains(&lang) {
@@ -79,7 +79,7 @@ impl Search {
                     }
 
                     let full_name = rep.and_then(|object| object.get("full_name"))
-                        .and_then(|value| value.as_string());
+                        .and_then(|value| value.as_str());
                     if let Some(name) = full_name {
                         if self.repositories.contains(&name.to_string()) {
                             continue;
@@ -92,7 +92,7 @@ impl Search {
                         .and_then(|value| value.as_i64());
 
                     let starred = rep.and_then(|object| object.get("html_url"))
-                        .and_then(|value| value.as_string());
+                        .and_then(|value| value.as_str());
 
                     match (stargazers_count, starred) {
                         (Some(count), Some(starred)) => {
@@ -142,7 +142,7 @@ impl Search {
                 for user in following_vec {
                     if let Some(new_login) = user.as_object()
                             .and_then(|object| object.get("login"))
-                            .and_then(|value| value.as_string()) {
+                            .and_then(|value| value.as_str()) {
                         let mut login = login.clone();
                         login.push(new_login.to_string());
 
