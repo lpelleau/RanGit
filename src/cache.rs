@@ -9,16 +9,19 @@ use std::collections::*;
 use serde_json;
 use std::time::{SystemTime, Duration};
 
+/// Caches precomputed values to avoid wasting resources.
 #[derive(Serialize, Deserialize)]
 pub struct Cache<K, V>
     where K: Hash + Eq
 {
+    store: HashMap<K, CachedItem<V>>
+
     #[serde(default = "default_store_path")]
     #[serde(skip)]
     path: PathBuf,
-    store: HashMap<K, CachedItem<V>>
 }
 
+/// Holds a value and its expiration date.
 #[derive(Serialize, Deserialize)]
 struct CachedItem<V> {
     value: V,
@@ -28,14 +31,18 @@ struct CachedItem<V> {
 impl<K, V> Cache<K, V>
     where K: Hash + Eq
 {
-    fn new() -> Self {
+    /// Constructs a new empty Cache
+    pub fn new() -> Self {
         Cache {
             path: default_store_path(),
             store: HashMap::new(),
         }
     }
 
-    pub fn get_or_compute<F>(&mut self, key: K, compute: F) -> &mut V
+    /// Returns the value corresponding to the given key if it's present in the cache
+    /// and not expired. Otherwise uses the compute function to build the value and
+    /// store it in the cache for later use.
+    pub fn get_or_compute<F>(&mut self, key: K, compute: F) -> &V
         where F: FnOnce() -> V
     {
         let build_value  = || CachedItem {
@@ -56,9 +63,10 @@ impl<K, V> Cache<K, V>
             Vacant(entry) => entry.insert(build_value())
         };
 
-        &mut item.value
+        &item.value
     }
 
+    /// Writes to disk the cache.
     pub fn save(&self)
         where K: Serialize,
               V: Serialize
@@ -71,6 +79,7 @@ impl<K, V> Cache<K, V>
             });
     }
 
+    /// Recreates a cache from the disk.
     pub fn load() -> Self
         where K: DeserializeOwned,
               V: DeserializeOwned
