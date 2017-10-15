@@ -14,7 +14,7 @@ use std::time::{SystemTime, Duration};
 pub struct Cache<K, V>
     where K: Hash + Eq
 {
-    store: HashMap<K, CachedItem<V>>
+    store: HashMap<K, CachedItem<V>>,
 
     #[serde(default = "default_store_path")]
     #[serde(skip)]
@@ -111,11 +111,20 @@ mod tests {
     }
 
     #[test]
-    fn get_or_compute_dont_compute_when_the_value_is_cached() {
+    fn get_or_compute_doesnt_compute_when_the_value_is_cached() {
         let mut cache = Cache::new();
-        cache.store.insert(1, CachedItem { value: 1 });
+        cache.store.insert(1, CachedItem { value: 1 , expires: SystemTime::now() + Duration::from_secs(3600) });
 
         let result = cache.get_or_compute(1, || panic!());
+        assert!(1 == *result);
+    }
+
+    #[test]
+    fn get_or_compute_computes_when_the_value_is_expired() {
+        let mut cache = Cache::new();
+        cache.store.insert(1, CachedItem { value: 1 , expires: SystemTime::now() - Duration::from_secs(3600) });
+
+        let result = cache.get_or_compute(1, || 1);
         assert!(1 == *result);
     }
 }
